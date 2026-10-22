@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Saídas Antecipadas - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>Saídas Antecipadas</h1>
+            {# A orientação muda conforme quem registra ou confirma as saídas. #}
+            {% if perfil == 'gestor' %}
+                <p>Registre a saída do aluno. O professor da turma confirma a autorização.</p>
+            {% else %}
+                <p>Saídas registradas pelo gestor para as suas turmas. Confirme ou rejeite cada pedido.</p>
+            {% endif %}
+        </div>
+        {% if perfil == 'gestor' %}
+            <a href="{% url 'registrar_saida' %}" class="btn btn-primary">Nova saída</a>
+        {% endif %}
+    </div>
+
+    <form method="get" class="filters card">
+        <select name="status" class="form-control" aria-label="Status">
+            <option value="">Todos os status</option>
+            {% for valor, nome in status_choices %}
+                <option value="{{ valor }}" {% if request.GET.status == valor %}selected{% endif %}>{{ nome }}</option>
+            {% endfor %}
+        </select>
+        <select name="turma" class="form-control" aria-label="Turma">
+            <option value="">Todas as turmas</option>
+            {% for turma in turmas %}
+                <option value="{{ turma.pk }}" {% if turma_selecionada == turma.pk|stringformat:"s" %}selected{% endif %}>{{ turma.nome }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a href="{% url 'lista_saidas' %}" class="btn btn-secondary">Limpar</a>
+    </form>
+
+    <div class="card">
+        <div class="card-header">Total de registros: <strong>{{ saidas.count }}</strong></div>
+        {% if saidas %}
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Aluno</th>
+                            <th>Turma</th>
+                            <th>Hora</th>
+                            <th>Motivo</th>
+                            <th>Responsável</th>
+                            <th>Status</th>
+                            <th>Confirmação</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for saida in saidas %}
+                            <tr>
+                                <td>{{ saida.data_saida|date:"d/m/Y" }}</td>
+                                <td><a href="{% url 'detalhe_aluno' saida.aluno.pk %}">{{ saida.aluno.nome }}</a></td>
+                                <td><span class="badge badge-blue">{{ saida.aluno.turma.nome }}</span></td>
+                                <td>{{ saida.hora_saida|time:"H:i" }}</td>
+                                <td>{{ saida.motivo|truncatewords:6 }}</td>
+                                <td>{{ saida.responsavel_autorizacao }}</td>
+                                <td>
+                                    {% if saida.status == 'autorizada' %}
+                                        <span class="badge bg-success">Autorizada</span>
+                                    {% elif saida.status == 'rejeitada' %}
+                                        <span class="badge bg-danger">Rejeitada</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pendente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if saida.autorizado_por %}
+                                        {{ saida.autorizado_por.get_full_name|default:saida.autorizado_por.username }}<br>
+                                        <small class="text-muted">{{ saida.data_autorizacao|date:"d/m/Y H:i" }}</small>
+                                        {% if saida.observacao_autorizacao %}
+                                            <br><small class="text-muted">{{ saida.observacao_autorizacao }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Aguardando professor</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="actions" style="flex-wrap:wrap;gap:6px;">
+                                        {# Só solicitações pendentes podem receber uma decisão do professor. #}
+                                        {% if saida.status == 'pendente' %}
+                                            <form method="post" action="{% url 'aprovar_saida' saida.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-success">Autorizar</button>
+                                            </form>
+                                            <form method="post" action="{% url 'rejeitar_saida' saida.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-danger">Rejeitar</button>
+                                            </form>
+                                        {% endif %}
+                                        {% if perfil == 'gestor' %}
+                                            <a href="{% url 'editar_saida' saida.pk %}" class="btn btn-sm btn-secondary">Editar</a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-body text-muted text-center py-4">Nenhuma saída registrada.</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

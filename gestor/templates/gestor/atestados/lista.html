@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Atestados - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>Atestados</h1>
+            <p>Arquivos organizados por período.</p>
+        </div>
+        <a href="{% url 'registrar_atestado' %}" class="btn btn-primary">＋ Nova pasta</a>
+    </div>
+
+    {# Mantém expandido o grupo raiz quando a URL seleciona uma pasta interna. #}
+    <details class="card atestado-raiz" {% if pasta_aberta %}open{% endif %}>
+        <summary class="card-header">
+            <span class="atestado-pasta-icone" aria-hidden="true">▸</span>
+            Atestado
+        </summary>
+        {# Exibe o conteúdo de cada período somente quando há pastas cadastradas. #}
+        {% if pastas %}
+            <div class="card-body atestado-pastas">
+                {# Cada pasta agrupa PDFs do mesmo intervalo de datas. #}
+                {% for pasta in pastas %}
+                    {# Mantém aberta a pasta selecionada para inclusão de novos documentos. #}
+                    <details class="atestado-pasta" {% if pasta_aberta.pk == pasta.pk %}open{% endif %}>
+                        <summary>
+                            <span class="atestado-pasta-icone" aria-hidden="true">▸</span>
+                            <span>{{ pasta.data_inicio|date:'j/n/Y' }} a {{ pasta.data_fim|date:'j/n/Y' }}</span>
+                            <span class="badge badge-blue">{{ pasta.documentos.count }} PDF{{ pasta.documentos.count|pluralize }}</span>
+                        </summary>
+                        <div class="atestado-pasta-conteudo">
+                            {# Lista os documentos existentes ou informa quando a pasta está vazia. #}
+                            {% if pasta.documentos.all %}
+                                <ul class="atestado-arquivos">
+                                    {% for documento in pasta.documentos.all %}
+                                        <li>
+                                            <a href="{{ documento.arquivo.url }}" target="_blank" rel="noopener">
+                                                ▤ {{ documento.arquivo.name|cut:'atestados/periodos/' }}
+                                            </a>
+                                            <small class="text-muted">Enviado em {{ documento.data_upload|date:'d/m/Y H:i' }}</small>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted">Nenhum PDF nesta pasta.</p>
+                            {% endif %}
+
+                            {# Só a pasta atualmente aberta recebe o formulário de upload. #}
+                            {% if pasta_aberta.pk == pasta.pk %}
+                                <form method="post" enctype="multipart/form-data" action="{% url 'adicionar_pdf_atestado' pasta.pk %}" class="atestado-adicionar-form">
+                                    {% csrf_token %}
+                                    {{ form_documento.arquivo }}
+                                    {% if form_documento.arquivo.errors %}<div class="field-error">{{ form_documento.arquivo.errors|striptags }}</div>{% endif %}
+                                    <button type="submit" class="btn btn-secondary">Adicionar PDF</button>
+                                </form>
+                            {% else %}
+                                <a class="btn btn-secondary btn-sm" href="?pasta={{ pasta.pk }}">Abrir pasta</a>
+                            {% endif %}
+                        </div>
+                    </details>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card-body text-muted">Nenhuma pasta de atestados criada.</div>
+        {% endif %}
+    </details>
+</section>
+{% endblock %}

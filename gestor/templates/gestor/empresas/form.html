@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>{{ titulo }}</h1>
+            <p>Informe os dados de contato e localizacao da empresa.</p>
+        </div>
+    </div>
+
+    {# Formulário de cadastro e edição com erros exibidos junto aos campos. #}
+    <form method="post" class="card" novalidate>
+        {% csrf_token %}
+        <div class="card-body">
+            {% if form.non_field_errors %}
+                <div class="text-danger small mb-3">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label class="form-label" for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
+                    {{ form.nome }}
+                    {% if form.nome.errors %}<div class="text-danger small">{{ form.nome.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="{{ form.cnpj.id_for_label }}">{{ form.cnpj.label }}</label>
+                    {{ form.cnpj }}
+                    {% if form.cnpj.errors %}<div class="text-danger small">{{ form.cnpj.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.endereco.id_for_label }}">{{ form.endereco.label }}</label>
+                {{ form.endereco }}
+                {% if form.endereco.errors %}<div class="text-danger small">{{ form.endereco.errors }}</div>{% endif %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.cidade.id_for_label }}">{{ form.cidade.label }}</label>
+                    {{ form.cidade }}
+                    {% if form.cidade.errors %}<div class="text-danger small">{{ form.cidade.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.estado.id_for_label }}">{{ form.estado.label }}</label>
+                    {{ form.estado }}
+                    {% if form.estado.errors %}<div class="text-danger small">{{ form.estado.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.telefone.id_for_label }}">{{ form.telefone.label }}</label>
+                    {{ form.telefone }}
+                    {% if form.telefone.errors %}<div class="text-danger small">{{ form.telefone.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a href="{% url 'lista_empresas' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</section>
+{% endblock %}

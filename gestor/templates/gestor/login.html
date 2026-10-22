@@ -1,0 +1,50 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Entrar - GAE</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="login-logo">GAE</div>
+    </div>
+    <div class="login-title">
+      <h1>Gestão e Acompanhamento</h1>
+      <p>Escolar</p>
+    </div>
+    <div class="login-card">
+      <h2>Acesse sua conta</h2>
+      {# Exibe o retorno da autenticação antes do próximo envio de credenciais. #}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="login-field">
+          <label for="email">E-mail ou usuário</label>
+          <input class="form-control" id="email" name="email" type="text" value="{{ request.POST.email|default:'' }}" placeholder="seu@email.com" required autofocus>
+        </div>
+        <div class="login-field">
+          <label for="senha">Senha</label>
+          <input class="form-control" id="senha" name="senha" type="password" placeholder="••••••••" required>
+        </div>
+        <div class="remember">
+          <label><input type="checkbox" name="lembrar"> Lembrar de mim</label>
+          <span>Área restrita</span>
+        </div>
+        <button class="btn btn-primary" style="width:100%;height:43px" type="submit">Entrar</button>
+      </form>
+      <p class="login-register">Ainda não tem uma conta? <a href="{% url 'cadastro_usuario' %}">Cadastre-se</a></p>
+    </div>
+    <div class="login-foot">Acesso exclusivo para docentes e diretores</div>
+  </div>
+</div>
+</body>
+</html>

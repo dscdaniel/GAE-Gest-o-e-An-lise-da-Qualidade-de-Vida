@@ -1,0 +1,65 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Criar conta - GAE</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="login-logo">GAE</div>
+    </div>
+    <div class="login-title">
+      <h1>Gestão e Acompanhamento</h1>
+      <p>Escolar</p>
+    </div>
+    <div class="login-card">
+      <h2>Criar sua conta</h2>
+      <p class="login-intro">Cadastre-se para acessar a área de acompanhamento escolar.</p>
+      <form method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="message error">{{ form.non_field_errors }}</div>
+        {% endif %}
+        {# Renderiza campos e erros a partir do formulário, inclusive a seleção de turmas. #}
+        {% for field in form %}
+          <div class="login-field {% if field.name == 'turma_professor' %}turma-professor-field{% endif %}" id="field-{{ field.name }}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+        {% endfor %}
+        <button class="btn btn-primary" style="width:100%;height:43px" type="submit">Criar conta</button>
+      </form>
+      <p class="login-register">Já tem uma conta? <a href="{% url 'login' %}">Entrar</a></p>
+    </div>
+    <div class="login-foot">Escolha o perfil de acesso para sua conta</div>
+  </div>
+</div>
+<script>
+  // A escolha do perfil controla a exibição e a obrigatoriedade das turmas do professor.
+  const tipoConta = document.getElementById('id_tipo_conta');
+  const turmaCampo = document.getElementById('field-turma_professor');
+
+  function toggleTurmaProfessor() {
+    if (!tipoConta || !turmaCampo) return;
+    const mostrar = tipoConta.value === 'professor';
+    turmaCampo.style.display = mostrar ? 'block' : 'none';
+    const select = turmaCampo.querySelector('select');
+    if (select) {
+      select.required = mostrar;
+    }
+  }
+
+  if (tipoConta) {
+    tipoConta.addEventListener('change', toggleTurmaProfessor);
+    toggleTurmaProfessor();
+  }
+</script>
+</body>
+</html>

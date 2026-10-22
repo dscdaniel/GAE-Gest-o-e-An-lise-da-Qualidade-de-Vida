@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Empresas - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>Empresas</h1>
+            <p>Cadastre e acompanhe as empresas vinculadas aos alunos.</p>
+        </div>
+        <a href="{% url 'criar_empresa' %}" class="btn btn-primary">Cadastrar empresa</a>
+    </div>
+
+    <form method="get" class="filters card">
+        <input
+            type="search"
+            name="busca"
+            value="{{ busca }}"
+            class="form-control"
+            aria-label="Buscar empresa"
+            placeholder="Buscar por empresa, CNPJ, cidade ou UF"
+        >
+        <button type="submit" class="btn btn-primary">Buscar</button>
+        {% if busca %}
+            <a href="{% url 'lista_empresas' %}" class="btn btn-secondary">Limpar</a>
+        {% endif %}
+    </form>
+
+    <div class="card">
+        <div class="card-header">Total de empresas: <strong>{{ empresas|length }}</strong></div>
+        {# Mostra empresas correspondentes à busca ou um estado vazio. #}
+        {% if empresas %}
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>CNPJ</th>
+                            <th>Cidade</th>
+                            <th>Telefone</th>
+                            <th>Alunos</th>
+                            <th>Acoes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for empresa in empresas %}
+                            <tr>
+                                <td>
+                                    <strong>{{ empresa.nome }}</strong><br>
+                                    <span class="text-muted small">{{ empresa.email }}</span>
+                                </td>
+                                <td>{{ empresa.cnpj }}</td>
+                                <td>{{ empresa.cidade }}/{{ empresa.estado }}</td>
+                                <td>{{ empresa.telefone }}</td>
+                                <td><span class="badge badge-blue">{{ empresa.total_alunos }}</span></td>
+                                <td>
+                                    <div class="actions">
+                                        <a href="{% url 'editar_empresa' empresa.pk %}" class="btn btn-sm btn-secondary">Editar</a>
+                                        <form method="post" action="{% url 'deletar_empresa' empresa.pk %}" style="display:inline" onsubmit="return confirm('Tem certeza que deseja excluir esta empresa?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-body text-muted text-center py-4">Nenhuma empresa encontrada.</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Períodos letivos - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>Períodos letivos</h1>
+            <p>Cadastre os períodos que poderão ser usados nas turmas e no conselho.</p>
+        </div>
+        <a href="{% url 'criar_periodo' %}" class="btn btn-primary">Cadastrar período</a>
+    </div>
+    <div class="card">
+        {# O período só pode ser excluído após confirmação via POST. #}
+        {% if periodos %}
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Nome</th><th>Início</th><th>Fim</th><th>Status</th><th>Ações</th></tr></thead>
+                    <tbody>
+                        {% for periodo in periodos %}
+                            <tr>
+                                <td><strong>{{ periodo.nome }}</strong></td>
+                                <td>{{ periodo.data_inicio|date:'d/m/Y' }}</td>
+                                <td>{{ periodo.data_fim|date:'d/m/Y' }}</td>
+                                <td>{% if periodo.ativo %}Ativo{% else %}Inativo{% endif %}</td>
+                                <td>
+                                    <a href="{% url 'editar_periodo' periodo.pk %}" class="btn btn-sm btn-secondary">Editar</a>
+                                    <form method="post" action="{% url 'deletar_periodo' periodo.pk %}" style="display:inline" onsubmit="return confirm('Excluir este período letivo?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-body text-muted text-center py-4">Nenhum período letivo cadastrado.</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

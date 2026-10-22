@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Ocorrências - GAE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-exclamation-triangle"></i> Registro de Ocorrências</h1>
+    <a href="{% url 'registrar_ocorrencia' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nova Ocorrência
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        {# Os filtros refletem a consulta da view sem enviar alterações ao servidor. #}
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Turma</label>
+                <select name="turma" class="form-control">
+                    <option value="">Todas</option>
+                    {% for turma in turmas %}
+                    <option value="{{ turma.id }}" {% if request.GET.turma|stringformat:"s" == turma.id|stringformat:"s" %}selected{% endif %}>
+                        {{ turma.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Tipo</label>
+                <select name="tipo" class="form-control">
+                    <option value="">Todos</option>
+                    {% for valor, nome in tipos %}
+                    <option value="{{ valor }}" {% if request.GET.tipo == valor %}selected{% endif %}>
+                        {{ nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 align-self-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabela de Ocorrências -->
+<div class="card">
+    <div class="card-header">
+        Total de Registros: <strong>{{ ocorrencias.count }}</strong>
+    </div>
+    <div class="card-body">
+        {# Alterna entre a tabela de resultados e a mensagem de lista vazia. #}
+        {% if ocorrencias %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Aluno</th>
+                        <th>Turma</th>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th>Registrado por</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ocorrencia in ocorrencias %}
+                    <tr>
+                        <td>{{ ocorrencia.data_ocorrencia|date:"d/m/Y" }}</td>
+                        <td>
+                            <a href="{% url 'detalhe_aluno' ocorrencia.aluno.pk %}" class="text-decoration-none">
+                                {{ ocorrencia.aluno.nome }}
+                            </a>
+                        </td>
+                        <td><span class="badge bg-info">{{ ocorrencia.aluno.turma.nome }}</span></td>
+                        <td><span class="badge bg-danger">{{ ocorrencia.get_tipo_display }}</span></td>
+                        <td>{{ ocorrencia.descricao|truncatewords:5 }}</td>
+                        <td>{{ ocorrencia.registrado_por.get_full_name }}</td>
+                        <td>
+                            <a href="{% url 'baixar_deliberacao_pdf' ocorrencia.pk %}" class="btn btn-sm btn-secondary" title="Baixar deliberação em PDF">PDF</a>
+                            <a href="{% url 'editar_ocorrencia' ocorrencia.pk %}" class="btn btn-sm btn-warning" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if ocorrencia.arquivo_ficha %}
+                                <a href="{{ ocorrencia.arquivo_ficha.url }}" class="btn btn-sm btn-info" target="_blank" rel="noopener" title="Abrir ficha anexa">Ficha</a>
+                            {% endif %}
+                            {% if perfil == 'gestor' %}
+                                <a href="{% url 'deletar_ocorrencia' ocorrencia.pk %}" class="btn btn-sm btn-danger" title="Deletar">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">Nenhuma ocorrência registrada</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

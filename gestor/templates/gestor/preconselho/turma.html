@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}Conselho {{ turma.nome }} - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>Conselho — {{ turma.nome }}</h1>
+            <p>
+                {{ turma.curso|default:'Curso não informado' }} ·
+                Professores:
+                {% for professor in turma.professores.all %}
+                    {{ professor.get_full_name|default:professor.username }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    {% if turma.professor %}{{ turma.professor.get_full_name|default:turma.professor.username }}{% else %}Não informado{% endif %}
+                {% endfor %} ·
+                Reunião de {{ preconselho.data_reuniao|date:"d/m/Y" }}
+            </p>
+        </div>
+        <div class="actions">
+            <a href="{% url 'baixar_preconselho_pdf' preconselho.pk %}" class="btn btn-secondary">Baixar PDF</a>
+            <a href="{% url 'preconselho_turmas' %}" class="btn btn-secondary">Trocar turma</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Selecionar data do conselho</div>
+        <div class="card-body">
+            <form method="get" class="filters">
+                <input
+                    type="date"
+                    name="data"
+                    value="{{ data_reuniao|date:'Y-m-d' }}"
+                    class="form-control"
+                    aria-label="Data do conselho"
+                >
+                <button type="submit" class="btn btn-primary">Abrir data</button>
+            </form>
+
+            {# Permite alternar entre reuniões existentes sem perder a turma atual. #}
+            {% if reunioes %}
+                <p class="text-muted" style="margin-top:12px;">Reuniões já registradas:</p>
+                <div class="actions" style="flex-wrap:wrap;gap:6px;">
+                    {% for reuniao in reunioes %}
+                        <a
+                            href="?data={{ reuniao.data_reuniao|date:'Y-m-d' }}"
+                            class="btn btn-sm {% if reuniao.pk == preconselho.pk %}btn-primary{% else %}btn-secondary{% endif %}"
+                        >{{ reuniao.data_reuniao|date:"d/m/Y" }}</a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="data" value="{{ data_reuniao|date:'Y-m-d' }}">
+
+        {# O cabeçalho e as anotações usam formulários separados para respeitar permissões por perfil. #}
+        <div class="card">
+            <div class="card-header">Dados gerais da reunião</div>
+            <div class="card-body">
+                {% if not pode_editar %}
+                    <p class="text-muted">Esta reunião está fechada e disponível somente para consulta.</p>
+                {% endif %}
+                {% for campo in form_cabecalho %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                        {{ campo }}
+                        {% if campo.errors %}
+                            <div class="text-danger small">{{ campo.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Alunos da turma: <strong>{{ total_alunos }}</strong> ·
+                Anotações preenchidas: <strong>{{ total_preenchidas }}</strong>
+            </div>
+
+            {% if linhas %}
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="filtro-alunos">Buscar aluno por nome</label>
+                        <input
+                            type="search"
+                            id="filtro-alunos"
+                            class="form-control"
+                            placeholder="Digite o nome do aluno..."
+                            autocomplete="off"
+                        >
+                    </div>
+                    <p id="nenhum-aluno-encontrado" class="text-muted text-center py-4" hidden>
+                        Nenhum aluno encontrado.
+                    </p>
+                    {% for linha in linhas %}
+                        <div class="card preconselho-aluno" data-nome-aluno="{{ linha.aluno.nome|lower }}" style="margin-bottom:16px;">
+                            <div class="card-header">
+                                <div class="preconselho-aluno-cabecalho">
+                                    <div>
+                                        <strong>{{ linha.aluno.nome }}</strong>
+                                        <small class="text-muted">
+                                            Matrícula: {{ linha.aluno.matricula|default:'—' }} ·
+                                            {{ linha.aluno.get_vinculo_display }}
+                                        </small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-secondary preconselho-toggle" aria-expanded="false">
+                                        Preencher conselho
+                                    </button>
+                                </div>
+                                <div class="actions" style="flex-wrap:wrap;gap:6px;margin-top:6px;">
+                                    <span class="badge badge-blue">Atrasos: {{ linha.total_atrasos }}</span>
+                                    <span class="badge badge-orange">Ocorrências: {{ linha.total_ocorrencias }}</span>
+                                    <span class="badge badge-yellow">Saídas: {{ linha.total_saidas }}</span>
+                                    <a href="{% url 'detalhe_aluno' linha.aluno.pk %}" class="btn btn-sm btn-secondary">Ver ficha</a>
+                                </div>
+                            </div>
+                            <div class="card-body preconselho-detalhes" hidden>
+                                {% for campo in linha.form %}
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                                        {{ campo }}
+                                        {% if campo.errors %}
+                                            <div class="text-danger small">{{ campo.errors|striptags }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                                {% if linha.anotacao.registrado_por and linha.anotacao.preenchida %}
+                                    <small class="text-muted">
+                                        Última atualização por
+                                        {{ linha.anotacao.registrado_por.get_full_name|default:linha.anotacao.registrado_por.username }}
+                                        em {{ linha.anotacao.data_atualizacao|date:"d/m/Y H:i" }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if pode_editar %}
+                <div class="card-body">
+                    <button type="submit" class="btn btn-primary">Salvar conselho</button>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="card-body text-muted text-center py-4">
+                    Esta turma ainda não possui alunos ativos cadastrados.
+                </div>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if linhas and perfil == 'gestor' %}
+        <form
+            method="post"
+            action="{% url 'preconselho_excluir' preconselho.pk %}"
+            onsubmit="return confirm('Excluir este conselho e todas as anotações desta data?');"
+        >
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">Excluir esta reunião</button>
+        </form>
+    {% endif %}
+</section>
+
+{% if linhas %}
+<script>
+    // Filtra os cartões pelo nome sem reenviar o formulário ao servidor.
+    const filtroAlunos = document.getElementById('filtro-alunos');
+    const alunos = Array.from(document.querySelectorAll('.preconselho-aluno'));
+    const nenhumAlunoEncontrado = document.getElementById('nenhum-aluno-encontrado');
+
+    filtroAlunos.addEventListener('input', () => {
+        const busca = filtroAlunos.value.trim().toLocaleLowerCase();
+        let visiveis = 0;
+
+        alunos.forEach((aluno) => {
+            const corresponde = aluno.dataset.nomeAluno.includes(busca);
+            aluno.hidden = !corresponde;
+            if (corresponde) {
+                visiveis += 1;
+            }
+        });
+
+        nenhumAlunoEncontrado.hidden = visiveis > 0;
+    });
+
+    // Expande ou recolhe os campos individuais e mantém aria-expanded sincronizado.
+    document.querySelectorAll('.preconselho-toggle').forEach((botao) => {
+        botao.addEventListener('click', () => {
+            const detalhes = botao.closest('.preconselho-aluno').querySelector('.preconselho-detalhes');
+            const aberto = !detalhes.hidden;
+            detalhes.hidden = aberto;
+            botao.setAttribute('aria-expanded', String(!aberto));
+            botao.textContent = aberto ? 'Preencher conselho' : 'Ocultar campos';
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

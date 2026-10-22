@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Dashboard - GAE
+{% endblock %}
+
+{% block content %}
+
+<section class="page">
+
+    <div class="page-header">
+
+        <div>
+            <h1>Dashboard</h1>
+            <p>Visão geral do apoio educacional.</p>
+        </div>
+
+    </div>
+
+    <div class="stat-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-icon blue">
+                AL
+            </div>
+
+            <div>
+                <div class="stat-value">
+                    {{ total_alunos }}
+                </div>
+
+                <div class="stat-label">
+                    Total de Alunos
+                </div>
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <div class="stat-icon orange">
+                AT
+            </div>
+
+            <div>
+                <div class="stat-value">
+                    {{ total_atrasos_hoje }}
+                </div>
+
+                <div class="stat-label">
+                    Atrasos Hoje
+                </div>
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <div class="stat-icon red-soft">
+                OC
+            </div>
+
+            <div>
+                <div class="stat-value">
+                    {{ total_ocorrencias_mes }}
+                </div>
+
+                <div class="stat-label">
+                    Ocorrências no mês
+                </div>
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <div class="stat-icon yellow">
+                SA
+            </div>
+
+            <div>
+                <div class="stat-value">
+                    {{ saidas_pendentes }}
+                </div>
+
+                <div class="stat-label">
+                    Saídas pendentes
+                </div>
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <div class="stat-icon purple">
+                AS
+            </div>
+
+            <div>
+                <div class="stat-value">
+                    {{ pastas_atestados }}
+                </div>
+
+                <div class="stat-label">
+                    Pastas de atestados
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="content-grid">
+
+        <div class="card">
+
+            <div class="activity-head">
+
+                <h3>
+                    Últimos atrasos
+                </h3>
+
+                <a
+                    class="btn btn-secondary btn-sm"
+                    href="{% url 'lista_atrasos' %}"
+                >
+                    Ver todos
+                </a>
+
+            </div>
+
+            <div class="table-wrap">
+
+                <table class="data-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Data</th>
+                            <th>Minutos</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for atraso in ultimos_atrasos %}
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        {{ atraso.aluno.nome }}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    {{ atraso.data_atraso|date:'d/m/Y' }}
+                                </td>
+
+                                <td>
+                                    <span class="badge badge-yellow">
+                                        {{ atraso.minutos_atraso }} min
+                                    </span>
+                                </td>
+
+                            </tr>
+
+                        {% empty %}
+
+                            <tr>
+                                <td colspan="3">
+                                    Nenhum atraso registrado.
+                                </td>
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+        <div class="card card-pad">
+
+            <h3 class="card-title">
+                Ações rápidas
+            </h3>
+
+            <div class="grid space-y">
+
+                <a
+                    class="btn btn-primary"
+                    href="{% url 'registrar_atraso' %}"
+                >
+                    + Registrar atraso
+                </a>
+
+                <a
+                    class="btn btn-secondary"
+                    href="{% url 'registrar_ocorrencia' %}"
+                >
+                    + Registrar ocorrência
+                </a>
+
+                <a
+                    class="btn btn-secondary"
+                    href="{% url 'registrar_saida' %}"
+                >
+                    + Registrar saída
+                </a>
+
+                <a
+                    class="btn btn-secondary"
+                    href="{% url 'registrar_atestado' %}"
+                >
+                    <i class="fas fa-plus" aria-hidden="true"></i> Enviar PDFs de atestados
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div
+        class="chart-grid"
+        style="margin-top: 18px"
+    >
+
+        <div class="card chart-panel">
+
+            <h3>
+                Alunos por turma
+            </h3>
+
+            <div class="chart-canvas-wrap">
+                <canvas id="alunosPorTurmaChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="card chart-panel">
+
+            <h3>
+                Ocorrências por tipo
+            </h3>
+
+            <div class="chart-canvas-wrap">
+                <canvas id="ocorrenciasPorTipoChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="card chart-panel">
+
+            <h3>
+                Saídas por status
+            </h3>
+
+            <div class="chart-canvas-wrap">
+                <canvas id="saidasPorStatusChart"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+{# Serializa os dados agregados pela view para que o JavaScript monte os gráficos. #}
+{{ alunos_por_turma|json_script:'alunos-por-turma-data' }}
+{{ ocorrencias_grafico|json_script:'ocorrencias-data' }}
+{{ saidas_grafico|json_script:'saidas-data' }}
+<script>
+    // Converte os blocos JSON seguros em dados consumidos pelos gráficos.
+    const chartData = (id) => JSON.parse(document.getElementById(id).textContent);
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+    };
+
+    const alunosPorTurma = chartData('alunos-por-turma-data');
+    new Chart(document.getElementById('alunosPorTurmaChart'), {
+        type: 'bar',
+        data: {
+            labels: alunosPorTurma.map(item => item.nome),
+            datasets: [{
+                data: alunosPorTurma.map(item => item.total_alunos),
+                backgroundColor: '#2677a8',
+                borderRadius: 4
+            }]
+        },
+        options: chartOptions
+    });
+
+    const ocorrencias = chartData('ocorrencias-data');
+    new Chart(document.getElementById('ocorrenciasPorTipoChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ocorrencias.map(item => item.label),
+            datasets: [{
+                data: ocorrencias.map(item => item.total),
+                backgroundColor: ['#c9141d', '#b77916', '#2677a8', '#1f8b5b', '#6f4a9c']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const saidas = chartData('saidas-data');
+    new Chart(document.getElementById('saidasPorStatusChart'), {
+        type: 'bar',
+        data: {
+            labels: saidas.map(item => item.label),
+            datasets: [{
+                data: saidas.map(item => item.total),
+                backgroundColor: ['#b77916', '#1f8b5b', '#c9141d'],
+                borderRadius: 4
+            }]
+        },
+        options: chartOptions
+    });
+</script>
+{% endblock %}

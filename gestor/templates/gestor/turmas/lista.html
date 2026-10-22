@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Turmas - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>Turmas</h1>
+            <p>Organize as turmas, periodos letivos e professores responsaveis.</p>
+        </div>
+        {% if perfil == 'gestor' %}
+            <div class="actions">
+                <a href="{% url 'lista_periodos' %}" class="btn btn-secondary">Períodos letivos</a>
+                <a href="{% url 'criar_turma' %}" class="btn btn-primary">Cadastrar turma</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <form method="get" class="filters card">
+        <input
+            type="search"
+            name="busca"
+            value="{{ busca }}"
+            class="form-control"
+            aria-label="Buscar turma"
+            placeholder="Buscar por turma, periodo ou professor"
+        >
+        <button type="submit" class="btn btn-primary">Buscar</button>
+        {% if busca %}
+            <a href="{% url 'lista_turmas' %}" class="btn btn-secondary">Limpar</a>
+        {% endif %}
+    </form>
+
+    <div class="card">
+        <div class="card-header">Total de turmas: <strong>{{ turmas|length }}</strong></div>
+        {% if turmas %}
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Turma</th>
+                            <th>Tipo</th>
+                            <th>Curso / horário</th>
+                            <th>Periodo</th>
+                            <th>Professor responsavel</th>
+                            <th>Alunos</th>
+                            <th>Acoes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for turma in turmas %}
+                            <tr>
+                                <td><strong>{{ turma.nome }}</strong></td>
+                                <td>{{ turma.get_tipo_turma_display }}</td>
+                                <td>{{ turma.curso|default:'—' }}<br><small class="text-muted">{{ turma.horario|default:'—' }}</small></td>
+                                <td>{{ turma.periodo.nome }}</td>
+                                <td>
+                                    {# Usa vários professores quando houver; mantém compatibilidade com o vínculo antigo. #}
+                                    {% for professor in turma.professores.all %}
+                                        {{ professor.get_full_name|default:professor.username }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        {% if turma.professor %}{{ turma.professor.get_full_name|default:turma.professor.username }}{% else %}Nao informado{% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td><span class="badge badge-blue">{{ turma.total_alunos }}</span></td>
+                                <td>
+                                    <div class="actions">
+                                        {% if perfil == 'gestor' %}
+                                            <a href="{% url 'editar_turma' turma.pk %}" class="btn btn-sm btn-secondary">Editar</a>
+                                            <form method="post" action="{% url 'deletar_turma' turma.pk %}" style="display:inline" onsubmit="return confirm('Tem certeza que deseja excluir esta turma? Os alunos vinculados também serão excluídos.');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                                            </form>
+                                        {% else %}
+                                            <span class="text-muted">Somente leitura</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-body text-muted text-center py-4">Nenhuma turma encontrada.</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

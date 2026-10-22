@@ -1,0 +1,272 @@
+{% load static %}
+
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>
+        {% block title %}
+            GAE - Gestão do Apoio Educacional
+        {% endblock %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/style.css' %}?v=20260908-3"
+    >
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+    >
+
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <aside class="sidebar">
+
+            <div class="brand">
+
+                <div class="brand-logo">
+                    <img src="{% static 'img/logo.png' %}" alt="Logo GAE" class="logo">
+                </div>
+
+                <div>
+
+                    <div class="brand-title">
+                        GAE
+                    </div>
+
+                    <div class="brand-subtitle">
+                        GESTÃO DO APOIO EDUCACIONAL 
+                    </div>
+
+                </div>
+
+            </div>
+
+            <nav class="nav">
+
+                {# Os links administrativos variam conforme o perfil enviado pelo context processor. #}
+                {% if perfil == 'gestor' %}
+                <a
+                    class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
+                    href="{% url 'dashboard' %}"
+                >
+                    <span class="nav-icon">
+                        ▦
+                    </span>
+                    Dashboard
+                </a>
+                {% endif %}
+
+                <p class="nav-label">
+                    Cadastros
+                </p>
+
+                <a
+                    class="nav-link {% if active_page == 'turmas' %}active{% endif %}"
+                    href="{% url 'lista_turmas' %}"
+                >
+                    <span class="nav-icon">
+                        🗒
+                    </span>
+                    Turmas
+                </a>
+
+                {% if perfil == 'gestor' %}
+                <a
+                    class="nav-link {% if active_page == 'empresas' %}active{% endif %}"
+                    href="{% url 'lista_empresas' %}"
+                >
+                    <span class="nav-icon">
+                        🏗
+                    </span>
+                    Empresas
+                </a>
+
+                {% endif %}
+
+                <p class="nav-label">
+                    Registros
+                </p>
+
+                <a
+                    class="nav-link {% if active_page == 'alunos' %}active{% endif %}"
+                    href="{% url 'lista_alunos' %}"
+                >
+                    <span class="nav-icon">
+                        ♟
+                    </span>
+                    Alunos
+                </a>
+
+                <a
+                    class="nav-link {% if active_page == 'ocorrencias' %}active{% endif %}"
+                    href="{% url 'lista_ocorrencias' %}"
+                >
+                    <span class="nav-icon">
+                        !
+                    </span>
+                    Ocorrências
+                </a>
+
+                <a
+                    class="nav-link {% if active_page == 'atrasos' %}active{% endif %}"
+                    href="{% url 'lista_atrasos' %}"
+                >
+                    <span class="nav-icon">
+                        ◷
+                    </span>
+                    Atrasos
+                </a>
+
+                <a
+                    class="nav-link {% if active_page == 'saidas' %}active{% endif %}"
+                    href="{% url 'lista_saidas' %}"
+                >
+                    <span class="nav-icon">
+                        ↗
+                    </span>
+                    Saídas
+                </a>
+
+                {% if perfil == 'gestor' %}
+                <a
+                    class="nav-link {% if active_page == 'atestados' %}active{% endif %}"
+                    href="{% url 'lista_atestados' %}"
+                >
+                    <span class="nav-icon">
+                        ▤
+                    </span>
+                    Atestados
+                </a>
+                {% endif %}
+
+                {% if perfil == 'gestor' or perfil == 'professor' %}
+                <a
+                    class="nav-link {% if active_page == 'preconselho' %}active{% endif %}"
+                    href="{% url 'preconselho_turmas' %}"
+                >
+                    <span class="nav-icon">
+                        ⚖
+                    </span>
+                    Conselho
+                </a>
+
+                {% endif %}
+
+                <p class="nav-label account">
+                    Sistema
+                </p>
+
+                {% if perfil == 'gestor' %}
+                <a
+                    class="nav-link {% if active_page == 'relatorios' %}active{% endif %}"
+                    href="{% url 'lista_relatorios' %}"
+                >
+                    <span class="nav-icon">
+                        ▥
+                    </span>
+                    Relatórios
+                </a>
+
+                {% endif %}
+
+                <a
+                    class="nav-link"
+                    href="{% url 'logout' %}"
+                >
+                    <span class="nav-icon">
+                        ↪
+                    </span>
+                    Sair
+                </a>
+
+            </nav>
+
+            <div class="sidebar-user">
+
+                <div class="avatar">
+                    {{ request.user.username|slice:':2'|upper }}
+                </div>
+
+                <div>
+
+                    <strong>
+                        {{ request.user.get_full_name|default:request.user.username }}
+                    </strong>
+
+                    <small>
+                        {% if perfil == 'gestor' %}Gestor{% elif perfil == 'professor' %}Professor{% else %}Sem perfil{% endif %}
+                    </small>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+        <main class="main">
+
+            <div class="mobile-topbar">
+
+                <strong>
+                    GAE
+                </strong>
+
+                <button
+                    class="mobile-menu"
+                    aria-label="Menu"
+                >
+                    ☰
+                </button>
+
+            </div>
+
+            {# Mensagens temporárias dão retorno às operações sem alterar o conteúdo da página. #}
+            {% if messages %}
+
+                <div class="message-wrap">
+
+                    {% for message in messages %}
+
+                        <div class="message {{ message.tags }}">
+                            {{ message }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% endif %}
+
+            {% block content %}
+
+            {% endblock %}
+
+        </main>
+
+    </div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+
+    {% block scripts %}
+
+    {% endblock %}
+
+</body>
+
+</html>

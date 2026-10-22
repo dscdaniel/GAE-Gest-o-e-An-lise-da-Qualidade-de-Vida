@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão - GAE{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger mt-5">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão
+            </div>
+            <div class="card-body">
+                <p class="text-danger mb-3">
+                    <strong>Aviso!</strong> Tem certeza que deseja deletar este registro?
+                </p>
+                <p class="text-muted">
+                    Esta ação <strong>não pode ser desfeita</strong>.
+                </p>
+
+                {# A exclusão só é confirmada após envio explícito do formulário protegido por CSRF. #}
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Sim, Deletar
+                        </button>
+                        <a href="javascript:history.back()" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

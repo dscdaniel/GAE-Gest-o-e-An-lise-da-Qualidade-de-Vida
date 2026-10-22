@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório - {{ aluno.nome }} - GAE{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1><i class="fas fa-chart-bar"></i> Relatório de {{ aluno.nome }}</h1>
+    <p class="text-muted">Matrícula: {{ aluno.matricula }}</p>
+</div>
+
+<!-- Filtros de Data -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Data Início</label>
+                <input type="date" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Data Fim</label>
+                <input type="date" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+            </div>
+            <div class="col-md-4 align-self-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumo -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="fas fa-clock" style="font-size: 2rem; color: var(--warning-color);"></i>
+            <h3>{{ atrasos.count }}</h3>
+            <p>Atrasos</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--danger-color);"></i>
+            <h3>{{ ocorrencias.count }}</h3>
+            <p>Ocorrências</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="fas fa-door-open" style="font-size: 2rem; color: #f59e0b;"></i>
+            <h3>{{ saidas.count }}</h3>
+            <p>Saídas</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="fas fa-file-alt" style="font-size: 2rem; color: var(--info-color);"></i>
+            <h3>{{ atestados.count }}</h3>
+            <p>Atestados</p>
+        </div>
+    </div>
+</div>
+
+{# As abas são controladas pelo script desta página, sem depender do JavaScript do Bootstrap. #}
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+        <a id="aba-atrasos" class="nav-link active" href="#atrasos" role="tab" aria-controls="atrasos" aria-selected="true" tabindex="0">
+            <i class="fas fa-clock"></i> Atrasos
+        </a>
+    </li>
+    <li class="nav-item">
+        <a id="aba-ocorrencias" class="nav-link" href="#ocorrencias" role="tab" aria-controls="ocorrencias" aria-selected="false" tabindex="-1">
+            <i class="fas fa-exclamation-triangle"></i> Ocorrências
+        </a>
+    </li>
+    <li class="nav-item">
+        <a id="aba-saidas" class="nav-link" href="#saidas" role="tab" aria-controls="saidas" aria-selected="false" tabindex="-1">
+            <i class="fas fa-door-open"></i> Saídas
+        </a>
+    </li>
+    <li class="nav-item">
+        <a id="aba-atestados" class="nav-link" href="#atestados" role="tab" aria-controls="atestados" aria-selected="false" tabindex="-1">
+            <i class="fas fa-file-alt"></i> Atestados
+        </a>
+    </li>
+</ul>
+
+{# Cada aba apresenta uma categoria de registros dentro do intervalo selecionado. #}
+<div class="tab-content">
+    <!-- Atrasos -->
+    <div id="atrasos" class="tab-pane active" role="tabpanel" aria-labelledby="aba-atrasos" aria-hidden="false" tabindex="0">
+        <div class="card">
+            <div class="card-body">
+                {% if atrasos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Hora</th>
+                                <th>Minutos</th>
+                                <th>Motivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for atraso in atrasos %}
+                            <tr>
+                                <td>{{ atraso.data_atraso|date:"d/m/Y" }}</td>
+                                <td>{{ atraso.hora_chegada|time:"H:i" }}</td>
+                                <td><span class="badge bg-warning">{{ atraso.minutos_atraso }}min</span></td>
+                                <td>{{ atraso.motivo }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Sem atrasos no período</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Ocorrências -->
+    <div id="ocorrencias" class="tab-pane" role="tabpanel" aria-labelledby="aba-ocorrencias" aria-hidden="true" tabindex="0">
+        <div class="card">
+            <div class="card-body">
+                {% if ocorrencias %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for oc in ocorrencias %}
+                            <tr>
+                                <td>{{ oc.data_ocorrencia|date:"d/m/Y" }}</td>
+                                <td><span class="badge bg-danger">{{ oc.get_tipo_display }}</span></td>
+                                <td>{{ oc.descricao }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Sem ocorrências no período</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Saídas -->
+    <div id="saidas" class="tab-pane" role="tabpanel" aria-labelledby="aba-saidas" aria-hidden="true" tabindex="0">
+        <div class="card">
+            <div class="card-body">
+                {% if saidas %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Hora</th>
+                                <th>Motivo</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for saida in saidas %}
+                            <tr>
+                                <td>{{ saida.data_saida|date:"d/m/Y" }}</td>
+                                <td>{{ saida.hora_saida|time:"H:i" }}</td>
+                                <td>{{ saida.motivo }}</td>
+                                <td>
+                                    {% if saida.status == 'autorizada' %}
+                                        <span class="badge bg-success">Autorizada</span>
+                                    {% elif saida.status == 'rejeitada' %}
+                                        <span class="badge bg-danger">Rejeitada</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pendente</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Sem saídas no período</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Atestados -->
+    <div id="atestados" class="tab-pane" role="tabpanel" aria-labelledby="aba-atestados" aria-hidden="true" tabindex="0">
+        <div class="card">
+            <div class="card-body">
+                {% if atestados %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Status</th>
+                                <th>Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for at in atestados %}
+                            <tr>
+                                <td>{{ at.data_atestado|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if at.status == 'aprovado' %}
+                                        <span class="badge bg-success">Aprovado</span>
+                                    {% elif at.status == 'rejeitado' %}
+                                        <span class="badge bg-danger">Rejeitado</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pendente</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ at.observacoes }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Sem atestados no período</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{% url 'detalhe_aluno' aluno.pk %}" class="btn btn-secondary mt-4">
+    <i class="fas fa-arrow-left"></i> Voltar
+</a>
+{% endblock %}
+
+{% block scripts %}
+{# Mantém a aba ativa sincronizada com o clique, a URL e a navegação voltar/avançar. #}
+<script>
+    (() => {
+        // Captura apenas as abas e painéis deste relatório para não afetar outras páginas.
+        const tabs = Array.from(document.querySelectorAll('.nav-tabs [role="tab"]'));
+        const defaultTab = tabs.find((tab) => tab.classList.contains('active')) || tabs[0];
+
+        if (!defaultTab) {
+            return;
+        }
+
+        // Atualiza estados visuais e acessíveis para a aba e seu painel correspondente.
+        const activateTab = (tab) => {
+            tabs.forEach((item) => {
+                const active = item === tab;
+                const panel = document.getElementById(item.getAttribute('aria-controls'));
+
+                item.classList.toggle('active', active);
+                item.setAttribute('aria-selected', String(active));
+                item.setAttribute('tabindex', active ? '0' : '-1');
+                panel.classList.toggle('active', active);
+                panel.setAttribute('aria-hidden', String(!active));
+            });
+        };
+
+        // Abre diretamente a aba indicada no fragmento da URL, quando houver.
+        const tabFromHash = () => tabs.find((tab) => tab.hash === window.location.hash) || defaultTab;
+        activateTab(tabFromHash());
+
+        // Troca de painel ao clicar e registra a seleção para voltar/avançar do navegador.
+        tabs.forEach((tab) => {
+            tab.addEventListener('click', (event) => {
+                event.preventDefault();
+                activateTab(tab);
+
+                if (window.location.hash !== tab.hash) {
+                    window.history.pushState(null, '', tab.hash);
+                }
+            });
+        });
+
+        // Sincroniza o painel quando o usuário navega pelo histórico do navegador.
+        window.addEventListener('popstate', () => activateTab(tabFromHash()));
+
+        // Permite navegar entre abas pelo teclado conforme o padrão de componentes tab.
+        tabs.forEach((tab, index) => { // captura o índice da aba atual
+            tab.addEventListener('keydown', (event) => {  // captura a tecla pressionada
+                let nextIndex;
+
+                if (event.key === 'ArrowRight') {
+                    nextIndex = (index + 1) % tabs.length; // próximo índice, com wrap-around
+                } else if (event.key === 'ArrowLeft') {
+                    nextIndex = (index - 1 + tabs.length) % tabs.length; // índice anterior, com wrap-around
+                } else if (event.key === 'Home') {
+                    nextIndex = 0;
+                } else if (event.key === 'End') {
+                    nextIndex = tabs.length - 1;
+                } else {
+                    return;
+                }
+
+                event.preventDefault(); // previne o comportamento padrão de rolagem da página
+                tabs[nextIndex].focus();
+                tabs[nextIndex].click();
+            });
+        });
+    })();
+</script>
+{% endblock %}

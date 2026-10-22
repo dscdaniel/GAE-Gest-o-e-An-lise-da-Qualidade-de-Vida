@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Alunos - GAE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-users"></i> Alunos</h1>
+    <div class="actions">
+        {# Importação e cadastro ficam disponíveis apenas para gestores. #}
+        {% if perfil == 'gestor' %}
+            <a href="{% url 'importar_alunos' %}" class="btn btn-secondary">Importar planilha</a>
+            <a href="{% url 'criar_aluno' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Aluno
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                {{ form.nome }}
+            </div>
+            <div class="col-md-3">
+                {{ form.turma }}
+            </div>
+            <div class="col-md-3">
+                {{ form.empresa }}
+            </div>
+            <div class="col-md-3">
+                {{ form.vinculo }}
+            </div>
+            <div class="col-md-3">
+                {{ form.destaque }}
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabela de Alunos -->
+<div class="card">
+    <div class="card-header">
+        Total de Alunos: <strong>{{ alunos.count }}</strong>
+    </div>
+    <div class="card-body">
+        {# A tabela e o estado vazio usam o mesmo resultado já filtrado pela view. #}
+        {% if alunos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Matrícula</th>
+                        <th>Nome</th>
+                        <th>Turma</th>
+                        <th>Tipo</th>
+                        <th>Vínculo</th>
+                        <th>Empresa</th>
+                        <th>Curso</th>
+                        <th>Ativo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# Cada linha reúne os dados principais e ações autorizadas para o perfil. #}
+                    {% for aluno in alunos %}
+                    <tr class="{% if aluno.em_destaque %}aluno-em-destaque{% endif %}">
+                        <td><strong>{{ aluno.matricula }}</strong></td>
+                        <td>{{ aluno.nome }}</td>
+                        <td><span class="badge bg-info">{{ aluno.turma.nome }}</span></td>
+                        <td><span class="badge badge-blue">{{ aluno.get_tipo_turma_display }}</span></td>
+                        <td>
+                            {% if aluno.vinculo == 'AE' %}
+                                <span class="badge badge-blue">AE · empregado</span>
+                            {% else %}
+                                <span class="badge bg-secondary">AD · desempregado</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ aluno.empresa.nome|default:"—" }}</td>
+                        <td>{{ aluno.curso|default:"—"|truncatechars:35 }}</td>
+                        <td>
+                            {% if aluno.ativo %}
+                                <span class="badge bg-success">Sim</span>
+                            {% else %}
+                                <span class="badge bg-danger">Não</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhe_aluno' aluno.pk %}" class="btn btn-sm btn-info" title="Visualizar">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if perfil == 'gestor' %}
+                                <a href="{% url 'editar_aluno' aluno.pk %}" class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'relatorio_aluno' aluno.pk %}" class="btn btn-sm btn-primary" title="Relatório">
+                                    <i class="fas fa-chart-bar"></i>
+                                </a>
+                                <form method="post" action="{% url 'deletar_aluno' aluno.pk %}" style="display:inline" onsubmit="return confirm('Tem certeza que deseja excluir este aluno?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">Nenhum aluno encontrado</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

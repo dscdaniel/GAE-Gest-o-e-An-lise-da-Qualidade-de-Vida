@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>{{ titulo }}</h1>
+            <p>Campos organizados conforme a planilha institucional de alunos.</p>
+        </div>
+    </div>
+
+    <form method="post" class="card" novalidate>
+        {% csrf_token %}
+        <div class="card-body">
+            {% if form.non_field_errors %}
+                <div class="text-danger small mb-3">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <h3 class="form-section-title">Identificação e contatos</h3>
+            <div class="row">
+                {# Agrupa os campos pelo nome para manter a ordem visual independente do ModelForm. #}
+                {% for field in form %}
+                    {% if field.name in 'nome matricula email data_nascimento rg cpf telefone celular nome_pai nome_mae' %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <h3 class="form-section-title">Endereço</h3>
+            <div class="row">
+                {# Renderiza apenas os campos de endereço nesta seção. #}
+                {% for field in form %}
+                    {% if field.name in 'endereco bairro cidade estado cep' %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <h3 class="form-section-title">Curso, turma e vínculo</h3>
+            <div class="row">
+                {# Dados acadêmicos e de vínculo são separados dos dados pessoais. #}
+                {% for field in form %}
+                    {% if field.name in 'turma tipo_turma curso horario carga_horaria data_inicio data_fim dias_semana vinculo empresa' %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.observacoes.id_for_label }}">{{ form.observacoes.label }}</label>
+                    {{ form.observacoes }}
+                    {% if form.observacoes.errors %}<div class="text-danger small">{{ form.observacoes.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-3 checkbox-stack">
+                    <label>{{ form.ativo }} {{ form.ativo.label }}</label>
+                    <label>{{ form.em_destaque }} {{ form.em_destaque.label }} <span class="badge badge-yellow">amarelo na listagem</span></label>
+                    {% if form.em_destaque.errors %}<div class="text-danger small">{{ form.em_destaque.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Salvar aluno</button>
+                <a href="{% url 'lista_alunos' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</section>
+{% endblock %}

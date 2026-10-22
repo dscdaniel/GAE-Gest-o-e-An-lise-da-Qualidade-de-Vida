@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ aluno.nome }} - GAE{% endblock %}
+
+{% block content %}
+{# As condições abaixo controlam o que cada perfil pode visualizar ou editar. #}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-user-circle"></i> {{ aluno.nome }}</h1>
+        <p class="text-muted">Matrícula: <strong>{{ aluno.matricula }}</strong></p>
+    </div>
+    {% if perfil == 'gestor' %}
+        <a href="{% url 'editar_aluno' aluno.pk %}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+    {% endif %}
+</div>
+
+{% if aluno.em_destaque %}
+<div class="alerta-destaque mb-4">Aluno destacado na planilha de origem.</div>
+{% endif %}
+
+<!-- Informações Básicas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i> Informações Básicas
+            </div>
+            <div class="card-body">
+                <p><strong>Email:</strong> {{ aluno.email }}</p>
+                <p><strong>Data de Nascimento:</strong> {{ aluno.data_nascimento|date:"d/m/Y" }}</p>
+                <p><strong>Turma:</strong> <span class="badge bg-info">{{ aluno.turma.nome }}</span></p>
+                <p><strong>Curso:</strong> {{ aluno.curso|default:"—" }}</p>
+                <p><strong>Horário:</strong> {{ aluno.horario|default:"—" }}</p>
+                <p><strong>Vínculo:</strong> <span class="badge {% if aluno.vinculo == 'AE' %}badge-blue{% else %}bg-secondary{% endif %}">{{ aluno.get_vinculo_display }}</span></p>
+                <p><strong>Empresa:</strong> {{ aluno.empresa.nome|default:"—" }}</p>
+                <p><strong>Status:</strong> 
+                    {% if aluno.ativo %}
+                        <span class="badge bg-success">Ativo</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inativo</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-map-marker-alt"></i> Endereço
+            </div>
+            <div class="card-body">
+                <p><strong>Rua/Av:</strong> {{ aluno.endereco }}</p>
+                <p><strong>Bairro:</strong> {{ aluno.bairro|default:"—" }}</p>
+                <p><strong>Cidade:</strong> {{ aluno.cidade }}</p>
+                <p><strong>Estado:</strong> {{ aluno.estado|upper }}</p>
+                <p><strong>CEP:</strong> {{ aluno.cep|default:"—" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Telefones -->
+{# Percorre os telefones relacionados ao aluno; se não houver, mostra uma mensagem. #}
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-phone"></i> Contatos
+    </div>
+    <div class="card-body">
+        <p><strong>Telefone:</strong> {{ aluno.telefone|default:"—" }} &nbsp; <strong>Celular:</strong> {{ aluno.celular|default:"—" }}</p>
+        <p><strong>Pai:</strong> {{ aluno.nome_pai|default:"—" }} &nbsp; <strong>Mãe:</strong> {{ aluno.nome_mae|default:"—" }}</p>
+        {% if telefones %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Contato</th>
+                        <th>Tipo</th>
+                        <th>Número</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tel in telefones %}
+                    <tr>
+                        <td>{{ tel.nome_contato }}</td>
+                        <td><span class="badge bg-secondary">{{ tel.get_tipo_display }}</span></td>
+                        <td>{{ tel.numero }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">Sem telefones cadastrados</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Tabs para histórico -->
+{# As abas organizam os registros do aluno sem repetir páginas ou consultas. #}
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#atrasos" role="tab">
+            <i class="fas fa-clock"></i> Atrasos ({{ atrasos.count }})
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#ocorrencias" role="tab">
+            <i class="fas fa-exclamation-triangle"></i> Ocorrências ({{ ocorrencias.count }})
+        </a>
+    </li>
+    {% if perfil == 'gestor' %}
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#saidas" role="tab">
+                <i class="fas fa-door-open"></i> Saídas ({{ saidas.count }})
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#atestados" role="tab">
+                <i class="fas fa-file-alt"></i> Atestados ({{ atestados.count }})
+            </a>
+        </li>
+    {% endif %}
+</ul>
+
+<div class="tab-content">
+    <!-- Atrasos -->
+    <div id="atrasos" class="tab-pane active">
+        <div class="card">
+            <div class="card-body">
+                {% if atrasos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Hora</th>
+                                <th>Minutos</th>
+                                <th>Motivo</th>
+                                <th>Registrado por</th>
+                                <th>Documentos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for atraso in atrasos %}
+                            <tr>
+                                <td>{{ atraso.data_atraso|date:"d/m/Y" }}</td>
+                                <td>{{ atraso.hora_chegada|time:"H:i" }}</td>
+                                <td><span class="badge bg-warning">{{ atraso.minutos_atraso }}min</span></td>
+                                <td>{{ atraso.motivo|truncatewords:5 }}</td>
+                                <td>{{ atraso.registrado_por.get_full_name }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Sem atrasos registrados</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Ocorrências -->
+    <div id="ocorrencias" class="tab-pane">
+        <div class="card">
+            <div class="card-body">
+                {% if ocorrencias %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                                <th>Registrado por</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for oc in ocorrencias %}
+                            <tr>
+                                <td>{{ oc.data_ocorrencia|date:"d/m/Y" }}</td>
+                                <td><span class="badge bg-danger">{{ oc.get_tipo_display }}</span></td>
+                                <td>{{ oc.descricao|truncatewords:8 }}</td>
+                                <td>{{ oc.registrado_por.get_full_name }}</td>
+                                <td>
+                                    <a class="btn btn-sm btn-secondary" href="{% url 'baixar_deliberacao_pdf' oc.pk %}">Deliberação PDF</a>
+                                    {% if oc.arquivo_ficha %}
+                                        <a class="btn btn-sm btn-info" href="{{ oc.arquivo_ficha.url }}" target="_blank" rel="noopener">Ficha anexa</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Sem ocorrências registradas</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if perfil == 'gestor' %}
+    <!-- Saídas -->
+    <div id="saidas" class="tab-pane">
+        <div class="card">
+            <div class="card-body">
+                {% if saidas %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Hora</th>
+                                <th>Motivo</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for saida in saidas %}
+                            <tr>
+                                <td>{{ saida.data_saida|date:"d/m/Y" }}</td>
+                                <td>{{ saida.hora_saida|time:"H:i" }}</td>
+                                <td>{{ saida.motivo|truncatewords:5 }}</td>
+                                <td>
+                                    {% if saida.status == 'autorizada' %}
+                                        <span class="badge bg-success">Autorizada</span>
+                                    {% elif saida.status == 'rejeitada' %}
+                                        <span class="badge bg-danger">Rejeitada</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pendente</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Sem saídas registradas</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Atestados -->
+    <div id="atestados" class="tab-pane">
+        <div class="card">
+            <div class="card-body">
+                {% if atestados %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Upload</th>
+                                <th>Status</th>
+                                <th>Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for at in atestados %}
+                            <tr>
+                                <td>{{ at.data_atestado|date:"d/m/Y" }}</td>
+                                <td>{{ at.data_upload|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if at.status == 'aprovado' %}
+                                        <span class="badge bg-success">Aprovado</span>
+                                    {% elif at.status == 'rejeitado' %}
+                                        <span class="badge bg-danger">Rejeitado</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pendente</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ at.observacoes|truncatewords:5 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">Sem atestados registrados</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<a href="{% url 'lista_alunos' %}" class="btn btn-secondary mt-4">
+    <i class="fas fa-arrow-left"></i> Voltar
+</a>
+{% endblock %}

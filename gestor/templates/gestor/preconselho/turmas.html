@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}Conselho - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>Conselho</h1>
+            <p>Escolha a turma para registrar as anotações do conselho de cada aluno.</p>
+        </div>
+    </div>
+
+    <form method="get" class="filters card">
+        <input
+            type="search"
+            name="busca"
+            value="{{ busca }}"
+            class="form-control"
+            aria-label="Buscar turma"
+            placeholder="Buscar por turma, curso, período ou professor"
+        >
+        <button type="submit" class="btn btn-primary">Buscar</button>
+        {% if busca %}
+            <a href="{% url 'preconselho_turmas' %}" class="btn btn-secondary">Limpar</a>
+        {% endif %}
+    </form>
+
+    {# Alterna entre as turmas disponíveis e as reuniões já registradas. #}
+    <nav class="tabs" aria-label="Navegação do conselho">
+        <a href="?aba=turmas{% if busca %}&busca={{ busca|urlencode }}{% endif %}" class="tab-link {% if aba != 'reunioes' %}active{% endif %}">
+            Turmas
+        </a>
+        <a href="?aba=reunioes{% if busca %}&busca={{ busca|urlencode }}{% endif %}" class="tab-link {% if aba == 'reunioes' %}active{% endif %}">
+            Reuniões salvas <span class="badge badge-blue">{{ reunioes_salvas|length }}</span>
+        </a>
+    </nav>
+
+    {% if aba == 'reunioes' %}
+        {# A aba de reuniões mostra o histórico consolidado; a outra lista turmas acessíveis. #}
+        <div class="card">
+            <div class="card-header">Reuniões salvas</div>
+            {% if reunioes_salvas %}
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Turma</th>
+                                <th>Data da reunião</th>
+                                <th>Situação</th>
+                                <th>Anotações dos alunos</th>
+                                <th>Última atualização</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reuniao in reunioes_salvas %}
+                                <tr>
+                                    <td><strong>{{ reuniao.turma.nome }}</strong></td>
+                                    <td>{{ reuniao.data_reuniao|date:"d/m/Y" }}</td>
+                                    <td>{{ reuniao.get_status_display }}</td>
+                                    <td>{{ reuniao.total_anotacoes }}</td>
+                                    <td>{{ reuniao.data_atualizacao|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <div class="actions">
+                                            <a
+                                                href="{% url 'preconselho_turma' reuniao.turma.pk %}?data={{ reuniao.data_reuniao|date:'Y-m-d' }}"
+                                                class="btn btn-sm {% if reuniao.status == 'aberto' %}btn-primary{% else %}btn-secondary{% endif %}"
+                                            >{% if reuniao.status == 'aberto' %}Editar{% else %}Ver{% endif %}</a>
+                                            <a
+                                                href="{% url 'baixar_preconselho_pdf' reuniao.pk %}"
+                                                class="btn btn-sm btn-secondary"
+                                            >PDF</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="card-body text-muted text-center py-4">Nenhuma reunião salva.</div>
+            {% endif %}
+        </div>
+    {% else %}
+    <div class="card">
+        <div class="card-header">Turmas disponíveis: <strong>{{ turmas|length }}</strong></div>
+        {% if turmas %}
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Turma</th>
+                            <th>Curso / horário</th>
+                            <th>Período</th>
+                            <th>Professores responsáveis</th>
+                            <th>Alunos</th>
+                            <th>Último conselho</th>
+                            {% if perfil == 'gestor' %}<th>Ações</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for turma in turmas %}
+                            <tr>
+                                <td><strong>{{ turma.nome }}</strong></td>
+                                <td>
+                                    {{ turma.curso|default:'—' }}<br>
+                                    <small class="text-muted">{{ turma.horario|default:'—' }}</small>
+                                </td>
+                                <td>{{ turma.periodo.nome }}</td>
+                                <td>
+                                    {% for professor in turma.professores.all %}
+                                        {{ professor.get_full_name|default:professor.username }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        {% if turma.professor %}{{ turma.professor.get_full_name|default:turma.professor.username }}{% else %}Não informado{% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td><span class="badge badge-blue">{{ turma.total_alunos }}</span></td>
+                                <td>
+                                    {% if turma.reunioes_preconselho %}
+                                        <div class="preconselho-reunioes">
+                                            {% for reuniao in turma.reunioes_preconselho %}
+                                                <div class="preconselho-reuniao-item">
+                                                    <span>
+                                                        {{ reuniao.data_reuniao|date:"d/m/Y" }}
+                                                        <small class="text-muted">{{ reuniao.get_status_display }}</small>
+                                                    </span>
+                                                    <a
+                                                        href="{% url 'preconselho_turma' turma.pk %}?data={{ reuniao.data_reuniao|date:'Y-m-d' }}"
+                                                        class="btn btn-sm {% if reuniao.status == 'aberto' %}btn-primary{% else %}btn-secondary{% endif %}"
+                                                    >{% if reuniao.status == 'aberto' %}Editar{% else %}Ver{% endif %}</a>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Nenhum registro</span>
+                                    {% endif %}
+                                </td>
+                                {% if perfil == 'gestor' %}
+                                <td>
+                                    <div class="actions">
+                                        <a
+                                            href="{% url 'preconselho_turma' turma.pk %}"
+                                            class="btn btn-sm btn-primary"
+                                        >Abrir conselho</a>
+                                    </div>
+                                </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-body text-muted text-center py-4">Nenhuma turma encontrada.</div>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

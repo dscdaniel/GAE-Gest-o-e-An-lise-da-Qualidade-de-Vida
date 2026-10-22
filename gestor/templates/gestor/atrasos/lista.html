@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Atrasos - GAE
+{% endblock %}
+
+{% block content %}
+
+<section class="page">
+
+    <div class="page-header">
+
+        <div>
+            <h1>Atrasos</h1>
+            <p>Controle dos atrasos registrados.</p>
+        </div>
+
+        {% if perfil == 'gestor' %}
+            <a href="{% url 'registrar_atraso' %}" class="btn btn-primary">
+                + Registrar atraso
+            </a>
+        {% endif %}
+
+    </div>
+
+    {# Mantém os filtros na URL para permitir compartilhar ou atualizar a consulta. #}
+    <form method="get" class="card filters">
+
+        <select name="turma" class="form-control">
+
+            <option value="">
+                Todas as turmas
+            </option>
+
+            {% for turma in turmas %}
+
+                <option
+                    value="{{ turma.id }}"
+                    {% if request.GET.turma == turma.id|stringformat:'s' %}
+                        selected
+                    {% endif %}
+                >
+                    {{ turma.nome }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+        <input
+            type="date"
+            name="data"
+            value="{{ request.GET.data }}"
+            class="form-control"
+        >
+
+        <button class="btn btn-primary">
+            Filtrar
+        </button>
+
+    </form>
+
+    <div class="card">
+
+        <div class="table-wrap">
+
+            <table class="data-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Aluno</th>
+                        <th>Turma</th>
+                        <th>Total</th>
+                        <th>Ações</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {# Cada aluno aparece uma vez; seus registros ficam dentro do expansor. #}
+                    {% for aluno_atraso in alunos_atrasos %}
+
+                        <tr{% if aluno_atraso.alerta_atrasos %} class="atraso-alerta"{% endif %}>
+
+                            <td>
+                                <details class="atraso-aluno">
+                                    <summary>
+                                        <strong>{{ aluno_atraso.aluno.nome }}</strong>
+                                        <span>Ver registros</span>
+                                    </summary>
+
+                                    <div class="atraso-aluno-detalhes">
+                                        {% for atraso in aluno_atraso.registros %}
+                                            <div class="atraso-item">
+                                                <div class="atraso-item-info">
+                                                    <strong>{{ atraso.data_atraso|date:'d/m/Y' }}</strong>
+                                                    <span>{{ atraso.hora_chegada|time:'H:i' }}</span>
+                                                    <span class="badge badge-yellow">{{ atraso.minutos_atraso }} min</span>
+                                                    <span>{{ atraso.motivo|default:'-'|truncatechars:40 }}</span>
+                                                </div>
+
+                                                {% if perfil == 'gestor' %}
+                                                    <div class="atraso-item-acoes">
+                                                        <a href="{% url 'editar_atraso' atraso.pk %}" class="btn btn-secondary btn-sm">Editar</a>
+                                                        <a href="{% url 'deletar_atraso' atraso.pk %}" class="btn btn-danger btn-sm">Excluir</a>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </details>
+                            </td>
+
+                            <td>
+                                {{ aluno_atraso.aluno.turma }}
+                            </td>
+
+                            <td class="actions">
+                                {{ aluno_atraso.total_atrasos }} atraso{{ aluno_atraso.total_atrasos|pluralize }}
+                                {% if perfil == 'gestor' %}
+                                    {# A view também valida o perfil gestor, o método POST e a ação enviada. #}
+                                    <form method="post" action="{% url 'alterar_alerta_atrasos' aluno_atraso.aluno.pk %}">
+                                        {% csrf_token %}
+                                        <button
+                                            type="submit"
+                                            name="acao"
+                                            value="{% if aluno_atraso.alerta_atrasos %}remover{% else %}ativar{% endif %}"
+                                            class="btn {% if aluno_atraso.alerta_atrasos %}btn-secondary{% else %}btn-danger{% endif %} btn-sm"
+                                        >
+                                            {% if aluno_atraso.alerta_atrasos %}
+                                                Remover alerta
+                                            {% else %}
+                                                Colocar alerta
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted">Somente leitura</span>
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td colspan="4">
+                                Nenhum atraso encontrado.
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

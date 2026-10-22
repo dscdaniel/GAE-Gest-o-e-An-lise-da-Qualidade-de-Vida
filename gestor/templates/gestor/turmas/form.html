@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - GAE{% endblock %}
+
+{% block content %}
+<section class="page">
+    <div class="page-header">
+        <div>
+            <h1>{{ titulo }}</h1>
+            <p>Defina o periodo letivo e os professores responsaveis pela turma.</p>
+        </div>
+    </div>
+
+    <form method="post" class="card" novalidate>
+        {% csrf_token %}
+        <div class="card-body">
+            {% if form.non_field_errors %}
+                <div class="text-danger small mb-3">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
+                {{ form.nome }}
+                {% if form.nome.errors %}<div class="text-danger small">{{ form.nome.errors }}</div>{% endif %}
+            </div>
+
+            <h3 class="form-section-title">Dados da turma</h3>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="{{ form.tipo_turma.id_for_label }}">{{ form.tipo_turma.label }}</label>
+                    {{ form.tipo_turma }}
+                </div>
+                <div class="col-md-8 mb-3">
+                    <label class="form-label" for="{{ form.curso.id_for_label }}">{{ form.curso.label }}</label>
+                    {{ form.curso }}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.periodo.id_for_label }}">{{ form.periodo.label }}</label>
+                    {{ form.periodo }}
+                    {% if form.periodo.errors %}<div class="text-danger small">{{ form.periodo.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.professores.id_for_label }}">{{ form.professores.label }}</label>
+                    {# O campo múltiplo permite associar mais de um professor à turma. #}
+                    {{ form.professores }}
+                    <small class="text-muted">Segure Ctrl (Windows) ou Command (Mac) para selecionar mais de um professor.</small>
+                    {% if form.professores.errors %}<div class="text-danger small">{{ form.professores.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <h3 class="form-section-title">Horário da turma</h3>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="{{ form.dias_semana.id_for_label }}">{{ form.dias_semana.label }}</label>
+                    {{ form.dias_semana }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="{{ form.hora_inicio.id_for_label }}">{{ form.hora_inicio.label }}</label>
+                    {{ form.hora_inicio }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="{{ form.hora_fim.id_for_label }}">{{ form.hora_fim.label }}</label>
+                    {{ form.hora_fim }}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a href="{% url 'lista_turmas' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</section>
+{% endblock %}
